@@ -7,7 +7,8 @@ Custom React JS wysiwyg editor.
 - Headings 1 - 6
 - Order & Unordered Lists
 
-I plan on adding in more features as I go. If you would like to see a new feature added, get in contact and I will do my best to add it.
+I plan on adding in more features as I go.  
+If you would like to see a new feature added, get in contact and I will do my best to add it.
 
 ### Install
 Via package Manager

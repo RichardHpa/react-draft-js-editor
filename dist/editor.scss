@@ -41,28 +41,28 @@
 
 
 .DraftEditor-root{
-    background: #fff;
-    border: 1px solid #ddd;
-    font-family: Georgia,serif;
-    font-size: 14px;
-    padding: 90px 15px;
-    height: 100%;
-    margin-top: 10px;
-    @media screen and (min-width:768px){
-        margin-top: 0px;
-    }
+background: #fff;
+border: 1px solid #ddd;
+font-family: Georgia,serif;
+font-size: 14px;
+padding: 90px 15px;
+height: 100%;
+margin-top: 10px;
+@media screen and (min-width:768px){
+    margin-top: 0px;
+}
 }
 
 .DraftEditor-editorContainer{
-    background-color: hsla(0,0%,100%,0);
-    border-left: .1px solid transparent;
-    position: relative;
-    z-index: 1;
-    width: 100%;
+background-color: hsla(0,0%,100%,0);
+border-left: .1px solid transparent;
+position: relative;
+z-index: 1;
+width: 100%;
 }
 
 .public-DraftEditorPlaceholder-inner {
-    color: #9197a3;
-    position: absolute;
-    z-index: 1;
+color: #9197a3;
+position: absolute;
+z-index: 1;
 }

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Editor, EditorState , RichUtils, convertFromRaw, convertToRaw} from 'draft-js';
+import { Editor, EditorState , RichUtils} from 'draft-js';
 import { stateToHTML } from 'draft-js-export-html';
 
 import './editor.scss';

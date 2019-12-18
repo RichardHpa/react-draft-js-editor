@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css?family=Nunito');
+
+.wrapper{
+    font-family: "Nunito", sans-serif;
+    width: 100%;
+    min-height: 10px;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    .editorControls{
+        box-sizing: border-box;
+        position: absolute;
+        top: 0;
+        transform: translateY(-100%);
+        left: 0;
+        width: 100%;
+        background-color: white;
+        border: 1px solid #ddd;
+        padding: 5px;
+        transition: transform 0.5s;
+        &.open{
+            top: 0;
+            transform: translateY(0);
+        }
+        .editorButton{
+            color: #999;
+            cursor: pointer;
+            padding: 0px 16px;
+            display: inline-block;
+            border-right: 0.8px solid #ddd;
+            &:hover{
+                cursor: pointer;
+                text-decoration: underline;
+            }
+            &.editorButtonActive{
+                color: #5890ff;
+            }
+        }
+    }
+}
+
+
+.DraftEditor-root{
+background: #fff;
+border: 1px solid #ddd;
+font-family: Georgia,serif;
+font-size: 14px;
+padding: 90px 15px;
+height: 100%;
+margin-top: 10px;
+@media screen and (min-width:768px){
+    margin-top: 0px;
+}
+}
+
+.DraftEditor-editorContainer{
+background-color: hsla(0,0%,100%,0);
+border-left: .1px solid transparent;
+position: relative;
+z-index: 1;
+width: 100%;
+}
+
+.public-DraftEditorPlaceholder-inner {
+color: #9197a3;
+position: absolute;
+z-index: 1;
+}

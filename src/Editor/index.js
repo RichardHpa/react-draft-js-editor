@@ -4,7 +4,7 @@ import { stateToHTML } from 'draft-js-export-html';
 
 import './editor.scss';
 
-class CustomEditor extends Component {
+class RhEditor extends Component {
     constructor () {
         super()
         this.state = {
@@ -79,7 +79,7 @@ class CustomEditor extends Component {
     }
 }
 
-export default CustomEditor;
+export default RhEditor;
 
 class EditorButton extends Component {
     constructor() {

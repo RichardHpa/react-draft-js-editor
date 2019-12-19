@@ -45,9 +45,10 @@ $dark: #3E464D;
 
 
 .DraftEditor-root{
+    color: $dark !important;
     background: #fff;
     border: 1px solid $dark;
-    font-family: Georgia,serif;
+    font-family: "Nunito", sans-serif;
     font-size: 14px;
     padding: 70px 15px;
     height: 100%;

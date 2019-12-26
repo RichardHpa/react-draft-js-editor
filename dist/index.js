@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Editor, EditorState, RichUtils } from 'draft-js';
 import { stateToHTML } from 'draft-js-export-html';
-import './editor.scss';
+import './editor.css';
 
 class RhEditor extends Component {
   constructor() {

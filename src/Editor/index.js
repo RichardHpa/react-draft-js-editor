@@ -40,8 +40,8 @@ class RhEditor extends Component {
             editorState: editorState,
             editorText: convertedText
         });
-        if(this.props.changeEditor){
-            this.props.changeEditor(convertedText);
+        if(this.props.recieveContent){
+            this.props.recieveContent(convertedText);
         }
 
     }

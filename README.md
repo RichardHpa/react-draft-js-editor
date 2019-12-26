@@ -22,5 +22,12 @@ Via package Manager
 ```js
     import  RhEditor  from 'rh-editor'
 
-    <RhEditor/>
+    const handleRecieveContent = (value) => {
+        console.log(value);
+    }
+
+    <RhEditor
+        showControls
+        recieveContent={handleRecieveContent}
+    />
 ```

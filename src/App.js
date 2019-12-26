@@ -2,11 +2,17 @@ import React from 'react';
 
 import RhEditor from './Editor'
 
-function App() {
+const  App = () => {
+
+    const handleRecieveContent = (value) => {
+        console.log(value);
+    }
+
   return (
     <div>
         <RhEditor
             showControls
+            recieveContent={handleRecieveContent}
         />
     </div>
   );

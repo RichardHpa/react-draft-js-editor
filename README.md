@@ -17,3 +17,10 @@ Via package Manager
     #or
     yarn add rh-editor
 ```
+
+### How to use
+```js
+    import  RhEditor  from 'rh-editor'
+
+    <RhEditor/>
+```

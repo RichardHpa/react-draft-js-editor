@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
-import { Editor, EditorState, RichUtils } from 'draft-js';
+import { EditorState, RichUtils } from 'draft-js';
+import Editor from "draft-js-plugins-editor";
 import { stateToHTML } from 'draft-js-export-html';
+import addLinkPlugin from './plugins/addLinkPlugin';
 import './editor.css';
 
 class RhEditor extends Component {
@@ -9,12 +11,16 @@ class RhEditor extends Component {
     this.state = {
       editorState: EditorState.createEmpty(),
       editorText: '',
-      focused: false
+      focused: false,
+      anchorInput: false
     };
+    this.plugins = [addLinkPlugin];
     this.toggleInlineStyle = this.toggleInlineStyle.bind(this);
     this.toggleBlockType = this.toggleBlockType.bind(this);
     this.onChange = this.onChange.bind(this);
     this.toggleActive = this.toggleActive.bind(this);
+    this.onOpenLink = this.onOpenLink.bind(this);
+    this.onAddLink = this.onAddLink.bind(this);
   }
 
   componentDidMount() {
@@ -57,9 +63,44 @@ class RhEditor extends Component {
     }
   }
 
+  onOpenLink() {
+    const {
+      anchorInput
+    } = this.state;
+    const editorState = this.state.editorState;
+    const selection = editorState.getSelection();
+    this.setState({
+      selection: selection,
+      anchorInput: !anchorInput
+    });
+  }
+
+  onAddLink(link) {
+    const {
+      selection
+    } = this.state;
+
+    if (link.length > 0) {
+      const editorState = this.state.editorState;
+      const content = editorState.getCurrentContent();
+      const contentWithEntity = content.createEntity("LINK", "MUTABLE", {
+        url: link
+      });
+      const newEditorState = EditorState.push(editorState, contentWithEntity, "create-entity");
+      const entityKey = contentWithEntity.getLastCreatedEntityKey();
+      this.onChange(RichUtils.toggleLink(newEditorState, selection, entityKey));
+      this.setState({
+        anchorInput: false,
+        selection: null
+      });
+      return "handled";
+    }
+  }
+
   render() {
     const {
-      editorState
+      editorState,
+      anchorInput
     } = this.state;
     return React.createElement("div", {
       className: "wrapper"
@@ -67,8 +108,11 @@ class RhEditor extends Component {
       active: this.state.focused,
       editorState: editorState,
       onToggle: this.toggleInlineStyle,
-      onToggleBlockType: this.toggleBlockType
-    }), React.createElement(Editor, {
+      onToggleBlockType: this.toggleBlockType,
+      AddLink: this.onOpenLink
+    }), anchorInput ? React.createElement(LinkEditor, {
+      addAnchor: this.onAddLink
+    }) : '', React.createElement(Editor, {
       editorState: editorState,
       placeholder: this.props.placeholder ? this.props.placeholder : 'Add Text Here',
       spellCheck: true,
@@ -118,8 +162,15 @@ const INLINE_STYLES = [{
   label: 'Underline',
   style: 'UNDERLINE'
 }];
+const MEDIA_BUTTONS = [{
+  label: 'Anchor',
+  style: 'ANCHOR'
+}];
 
 const EditorControls = props => {
+  const {
+    editorState
+  } = props;
   var currentStyle = props.editorState.getCurrentInlineStyle();
   const selection = props.editorState.getSelection();
   const blockType = props.editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
@@ -137,6 +188,10 @@ const EditorControls = props => {
     label: type.label,
     onToggle: props.onToggleBlockType,
     style: type.style
+  })), MEDIA_BUTTONS.map(type => React.createElement(EditorButton, {
+    key: type.label,
+    label: type.label,
+    onToggle: props.AddLink
   })));
 };
 
@@ -165,3 +220,50 @@ const BLOCK_TYPES = [{
   label: 'OL',
   style: 'ordered-list-item'
 }];
+
+class LinkEditor extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      anchor: ''
+    };
+    this.onSubmit = this.onSubmit.bind(this);
+    this.onChange = this.onChange.bind(this);
+  }
+
+  onSubmit(e) {
+    e.preventDefault();
+
+    if (this.props.addAnchor) {
+      this.props.addAnchor(this.state.anchor);
+    }
+
+    this.setState({
+      anchor: ''
+    });
+  }
+
+  onChange(e) {
+    this.setState({
+      anchor: e.target.value
+    });
+  }
+
+  render() {
+    return React.createElement("form", {
+      className: "anchorContainer",
+      onSubmit: this.onSubmit
+    }, React.createElement("input", {
+      className: "anchorInput",
+      type: "text",
+      placeholder: "please enter url",
+      onChange: this.onChange,
+      value: this.state.anchor
+    }), React.createElement("div", {
+      className: "anchorButtonAppend"
+    }, React.createElement("button", {
+      type: "submit"
+    }, "Add Link")));
+  }
+
+}

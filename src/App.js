@@ -5,17 +5,17 @@ import RhEditor from './Editor'
 const  App = () => {
 
     const handleRecieveContent = (value) => {
-        console.log(value);
+        // console.log(value);
     }
 
-  return (
-    <div>
+    return (
+        <div>
         <RhEditor
             showControls
             recieveContent={handleRecieveContent}
         />
-    </div>
-  );
+        </div>
+    );
 }
 
 export default App;

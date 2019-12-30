@@ -75,3 +75,47 @@
   position: absolute;
   z-index: 1;
 }
+
+
+
+
+
+/* .anchorContainer {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+  background-color: white;
+  padding: 10px 20px;
+  box-sizing: border-box;
+}
+.anchorContainer .anchorInput {
+  display: block;
+  position: relative;
+  flex: 1 1 auto;
+  width: 1%;
+  margin-bottom: 0;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #ced4da;
+  box-sizing: border-box;
+}
+.anchorContainer .anchorButtonAppend {
+  display: flex;
+  margin-left: -1px;
+  box-sizing: border-box;
+}
+.anchorContainer .anchorButtonAppend button {
+  padding: 0.375rem 0.75rem;
+  background-color: transparent;
+  border: 1px solid #ced4da;
+  color: #6c757d;
+  border-radius: 0;
+  z-index: 2;
+  box-sizing: border-box;
+}
+.anchorContainer .anchorButtonAppend button:hover {
+  cursor: pointer;
+  background-color: #ced4da;
+  box-sizing: border-box;
+} */

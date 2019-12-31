@@ -1,8 +1,9 @@
 {
   "name": "rh-editor",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": false,
   "license": "(ISC OR GPL-3.0)",
+  "homepage": ".",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "babel": {

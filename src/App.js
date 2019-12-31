@@ -7,7 +7,7 @@ const  App = () => {
     const [output, setValue] = useState();
 
     const handleRecieveContent = (value) => {
-        console.log(value);
+        // console.log(value);
         setValue(value)
     }
 
@@ -17,7 +17,7 @@ const  App = () => {
             <div className="rhEdit">
                 <RhEditor
                     showControls
-                    recieveContent={handleRecieveContent}
+                    recieveHtml={handleRecieveContent}
                 />
             </div>
             <div className="rhOutput">

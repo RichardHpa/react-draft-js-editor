@@ -16,7 +16,7 @@ a{
     min-height: 10px;
     height: 100%;
     position: relative;
-    overflow: hidden;
+    /* overflow: hidden; */
 }
 
 .wrapper .editorControls {
@@ -33,6 +33,7 @@ a{
     border: 1px solid var(--dark);
     padding: 5px;
     transition: transform 0.5s;
+    z-index: 2;
 }
 .wrapper .editorControls.open {
     top: 0;
@@ -90,11 +91,11 @@ a{
 
 .rhLinkContainer .tooltip {
     border: 1px solid var(--dark);
-    background: white;
+    background-color: white;
     top: 100%;
     color: var(--dark);
     display: block;
-    left: -200%;
+    /* left: -200%; */
     margin-top: 15px;
     opacity: 0;
     padding: 5px;
@@ -137,8 +138,8 @@ a{
     top: -10px;
     content: " ";
     height: 0;
-    left: 50%;
-    margin-left: -13px;
+    /* left: 50%; */
+    /* margin-left: -13px; */
     position: absolute;
     width: 0;
 }

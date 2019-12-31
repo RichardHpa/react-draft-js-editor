@@ -70,14 +70,32 @@ class RhEditor extends Component {
     }
 
     onChange(editorState){
+        const selectionState = editorState.getSelection();
+        const anchorKey = selectionState.getAnchorKey();
+        const currentContent = editorState.getCurrentContent();
+        const currentContentBlock = currentContent.getBlockForKey(anchorKey);
+        const start = selectionState.getStartOffset();
+        const end = selectionState.getEndOffset();
+        const selectedText = currentContentBlock.getText().slice(start, end);
+
+        let currentSelection;
+        if(selectedText.length > 0){
+            currentSelection = selectionState;
+        } else {
+            currentSelection = null;
+        }
+
         const convertedText = stateToHTML(editorState.getCurrentContent());
-        // console.log(convertedText);
         this.setState({
             editorState: editorState,
-            editorText: convertedText
+            editorText: convertedText,
+            currentSelection: currentSelection
         });
-        if(this.props.recieveContent){
-            this.props.recieveContent(convertedText);
+        if(this.props.recieveHtml){
+            this.props.recieveHtml(convertedText);
+        }
+        if(this.props.recieveEditorState){
+            this.props.recieveEditorState(editorState);
         }
     }
 
@@ -104,84 +122,103 @@ class RhEditor extends Component {
     // }
 
     onAddLink(link){
-        const { editorState } = this.state;
-        const selectionState = editorState.getSelection();
-      	const contentState = editorState.getCurrentContent();
-      	const currentBlock = contentState.getBlockForKey(selectionState.getStartKey());
-        const currentBlockKey = currentBlock.getKey();
-        const blockMap = contentState.getBlockMap();
-        const blocksBefore = blockMap.toSeq().takeUntil((v) => (v === currentBlock));
-      	const blocksAfter = blockMap.toSeq().skipUntil((v) => (v === currentBlock)).rest();
-      	const newBlockKey = genKey();
+        const { editorState, currentSelection } = this.state;
 
-        const newBlock = new ContentBlock({
-          key: newBlockKey,
-          type: 'unstyled',
-          text: link,
-          characterList: new List(Repeat(CharacterMetadata.create(), link.length)),
-        });
+        if(currentSelection){
+            const content = editorState.getCurrentContent();
+            const contentWithEntity = content.createEntity("LINK", "IMMUTABLE", {
+                url: link
+            });
+            let newEditorState = EditorState.push(
+                editorState,
+                contentWithEntity,
+                "create-entity"
+            );
+            const entityKey = contentWithEntity.getLastCreatedEntityKey();
+            newEditorState = RichUtils.toggleLink(newEditorState, newEditorState.getSelection(), entityKey);
 
-        const newBlockMap = blocksBefore.concat(
-          [[currentBlockKey, currentBlock], [newBlockKey, newBlock]],
-          blocksAfter
-        ).toOrderedMap();
+            const rawDraftContentState = JSON.stringify( convertToRaw(newEditorState.getCurrentContent()) );
+            const blocksFromHTML = convertFromRaw(JSON.parse( rawDraftContentState));
+            let initial = EditorState.createWithContent(blocksFromHTML, decorators);
 
-        const selection = editorState.getSelection();
+            this.onChange(initial);
 
-        const newContent = contentState.merge({
-          blockMap: newBlockMap,
-          selectionBefore: selection,
-          selectionAfter: selection.merge({
-            anchorKey: newBlockKey,
-            anchorOffset: 0,
-            focusKey: newBlockKey,
-            focusOffset: 0,
-            isBackward: false,
-          }),
-        });
+            // this.onChange(RichUtils.toggleLink(newEditorState, currentSelection, entityKey));
+        } else {
+            const selectionState = editorState.getSelection();
+            const contentState = editorState.getCurrentContent();
+            const currentBlock = contentState.getBlockForKey(selectionState.getStartKey());
+            const currentBlockKey = currentBlock.getKey();
+            const blockMap = contentState.getBlockMap();
+            const blocksBefore = blockMap.toSeq().takeUntil((v) => (v === currentBlock));
+            const blocksAfter = blockMap.toSeq().skipUntil((v) => (v === currentBlock)).rest();
+            const newBlockKey = genKey();
 
-    	let newEditorState = EditorState.push(editorState, newContent, 'split-block');
+            const newBlock = new ContentBlock({
+              key: newBlockKey,
+              type: 'unstyled',
+              text: link,
+              characterList: new List(Repeat(CharacterMetadata.create(), link.length)),
+            });
 
-        let newSelection = new SelectionState({
-          anchorKey: newBlockKey,
-          anchorOffset: 0,
-          focusKey: newBlockKey,
-          focusOffset: link.length
-        });
+            const newBlockMap = blocksBefore.concat(
+              [[currentBlockKey, currentBlock], [newBlockKey, newBlock]],
+              blocksAfter
+            ).toOrderedMap();
 
-        newEditorState = EditorState.forceSelection(newEditorState, newSelection);
+            const selection = editorState.getSelection();
 
-        const newContentState = newEditorState.getCurrentContent();
-        const contentStateWithEntity = newContentState.createEntity(
-          'LINK',
-          'IMMUTABLE',
-          { url: link }
-        );
+            const newContent = contentState.merge({
+              blockMap: newBlockMap,
+              selectionBefore: selection,
+              selectionAfter: selection.merge({
+                anchorKey: newBlockKey,
+                anchorOffset: 0,
+                focusKey: newBlockKey,
+                focusOffset: 0,
+                isBackward: false,
+              }),
+            });
 
-        const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
-        newEditorState = EditorState.set(newEditorState, { currentContent: contentStateWithEntity });
+            let newEditorState = EditorState.push(editorState, newContent, 'split-block');
 
-        newEditorState = RichUtils.toggleLink(newEditorState, newEditorState.getSelection(), entityKey);
+            let newSelection = new SelectionState({
+              anchorKey: newBlockKey,
+              anchorOffset: 0,
+              focusKey: newBlockKey,
+              focusOffset: link.length
+            });
 
-    	// reset selection
-        newSelection = new SelectionState({
-          anchorKey: newBlockKey,
-          anchorOffset: link.length,
-          focusKey: newBlockKey,
-          focusOffset: link.length
-        });
+            newEditorState = EditorState.forceSelection(newEditorState, newSelection);
 
-        newEditorState = EditorState.forceSelection(newEditorState, newSelection);
-        // const convertedText = stateToHTML(newEditorState.getCurrentContent());
-        // console.log(convertedText);
-        const rawDraftContentState = JSON.stringify( convertToRaw(newEditorState.getCurrentContent()) );
-        // console.log(rawDraftContentState);
+            const newContentState = newEditorState.getCurrentContent();
+            const contentStateWithEntity = newContentState.createEntity(
+              'LINK',
+              'IMMUTABLE',
+              { url: link }
+            );
 
-        // const blocksFromHTML = convertFromHTML(convertedText)
-        const blocksFromHTML = convertFromRaw(JSON.parse( rawDraftContentState));
-        let initial = EditorState.createWithContent(blocksFromHTML, decorators);
+            const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+            newEditorState = EditorState.set(newEditorState, { currentContent: contentStateWithEntity });
 
-        this.onChange(initial);
+            newEditorState = RichUtils.toggleLink(newEditorState, newEditorState.getSelection(), entityKey);
+
+            // reset selection
+            newSelection = new SelectionState({
+              anchorKey: newBlockKey,
+              anchorOffset: link.length,
+              focusKey: newBlockKey,
+              focusOffset: link.length
+            });
+
+            newEditorState = EditorState.forceSelection(newEditorState, newSelection);
+            const rawDraftContentState = JSON.stringify( convertToRaw(newEditorState.getCurrentContent()) );
+            const blocksFromHTML = convertFromRaw(JSON.parse( rawDraftContentState));
+            let initial = EditorState.createWithContent(blocksFromHTML, decorators);
+
+            this.onChange(initial);
+        }
+
     }
 
 
@@ -218,6 +255,13 @@ const EditorControls = (props) => {
     const blockType = props.editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
     return (
         <div className={`editorControls ${props.active? 'open': ''}`}>
+            {MEDIA_BUTTONS.map(
+                type => <LinkButton
+                    key={type.label}
+                    label={type.label}
+                    addLink={props.AddLink}
+                />
+            )}
             {INLINE_STYLES.map(
                 type => <EditorButton
                 key={type.label}
@@ -234,13 +278,6 @@ const EditorControls = (props) => {
                 label={type.label}
                 onToggle={props.onToggleBlockType}
                 style={type.style}
-                />
-            )}
-            {MEDIA_BUTTONS.map(
-                type => <LinkButton
-                    key={type.label}
-                    label={type.label}
-                    addLink={props.AddLink}
                 />
             )}
         </div>

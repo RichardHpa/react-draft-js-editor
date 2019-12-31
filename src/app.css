@@ -1,0 +1,12 @@
+.rhContainer{
+    display: flex;
+}
+
+.rhEdit,
+.rhOutput{
+    flex: 1;
+}
+
+.rhOutput{
+    padding: 10px;
+}

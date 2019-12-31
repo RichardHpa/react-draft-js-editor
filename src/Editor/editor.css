@@ -190,3 +190,7 @@ a{
 .lte8 .rhLinkContainer .tooltip {
     display: block;
 }
+
+.public-DraftStyleDefault-block {
+  margin-bottom: 1em;
+}

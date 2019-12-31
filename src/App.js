@@ -1,19 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
+import './app.css';
 
 import RhEditor from './Editor'
 
 const  App = () => {
+    const [output, setValue] = useState();
 
     const handleRecieveContent = (value) => {
-        // console.log(value);
+        console.log(value);
+        setValue(value)
     }
 
+
     return (
-        <div>
-        <RhEditor
-            showControls
-            recieveContent={handleRecieveContent}
-        />
+        <div className="rhContainer">
+            <div className="rhEdit">
+                <RhEditor
+                    showControls
+                    recieveContent={handleRecieveContent}
+                />
+            </div>
+            <div className="rhOutput">
+                <div dangerouslySetInnerHTML={{ __html: output }} />
+            </div>
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { EditorState, RichUtils, convertFromHTML, ContentState, ContentBlock, genKey, CharacterMetadata, SelectionState, CompositeDecorator, Editor } from 'draft-js';
+import { EditorState, RichUtils, ContentBlock, genKey, CharacterMetadata, SelectionState, CompositeDecorator, Editor, convertFromRaw, convertToRaw } from 'draft-js';
 import { List, Repeat } from 'immutable'
 import { stateToHTML } from 'draft-js-export-html';
 
@@ -70,7 +70,6 @@ class RhEditor extends Component {
     }
 
     onChange(editorState){
-        console.log(editorState);
         const convertedText = stateToHTML(editorState.getCurrentContent());
         // console.log(convertedText);
         this.setState({
@@ -115,7 +114,6 @@ class RhEditor extends Component {
       	const blocksAfter = blockMap.toSeq().skipUntil((v) => (v === currentBlock)).rest();
       	const newBlockKey = genKey();
 
-        // add new ContentBlock to editor state with appropriate text
         const newBlock = new ContentBlock({
           key: newBlockKey,
           type: 'unstyled',
@@ -142,9 +140,8 @@ class RhEditor extends Component {
           }),
         });
 
-    		let newEditorState = EditorState.push(editorState, newContent, 'split-block');
+    	let newEditorState = EditorState.push(editorState, newContent, 'split-block');
 
-        // programmatically apply selection on this text
         let newSelection = new SelectionState({
           anchorKey: newBlockKey,
           anchorOffset: 0,
@@ -154,9 +151,7 @@ class RhEditor extends Component {
 
         newEditorState = EditorState.forceSelection(newEditorState, newSelection);
 
-        // create link entity
         const newContentState = newEditorState.getCurrentContent();
-
         const contentStateWithEntity = newContentState.createEntity(
           'LINK',
           'IMMUTABLE',
@@ -168,7 +163,7 @@ class RhEditor extends Component {
 
         newEditorState = RichUtils.toggleLink(newEditorState, newEditorState.getSelection(), entityKey);
 
-    		// reset selection
+    	// reset selection
         newSelection = new SelectionState({
           anchorKey: newBlockKey,
           anchorOffset: link.length,
@@ -177,41 +172,39 @@ class RhEditor extends Component {
         });
 
         newEditorState = EditorState.forceSelection(newEditorState, newSelection);
-        const convertedText = stateToHTML(newEditorState.getCurrentContent());
+        // const convertedText = stateToHTML(newEditorState.getCurrentContent());
         // console.log(convertedText);
+        const rawDraftContentState = JSON.stringify( convertToRaw(newEditorState.getCurrentContent()) );
+        // console.log(rawDraftContentState);
 
-
-
-        //THis section WORKS
-        // const initalHtml = '<div><a href="http://www.g.co">Example link</a></div>'
-        const blocksFromHTML = convertFromHTML(convertedText)
-        let state = ContentState.createFromBlockArray(blocksFromHTML)
-        let initial = EditorState.createWithContent(state, decorators)
+        // const blocksFromHTML = convertFromHTML(convertedText)
+        const blocksFromHTML = convertFromRaw(JSON.parse( rawDraftContentState));
+        let initial = EditorState.createWithContent(blocksFromHTML, decorators);
 
         this.onChange(initial);
     }
 
 
     render(){
-        const { editorState, anchorInput } = this.state;
+        const { editorState } = this.state;
         return(
             <div className="wrapper">
-            <EditorControls
-                active={this.state.focused}
-                editorState={editorState}
-                onToggle={this.toggleInlineStyle}
-                onToggleBlockType={this.toggleBlockType}
-                AddLink={this.onAddLink}
-            />
-            <Editor
-                editorState={editorState}
-                decorators={decorators}
-                placeholder={this.props.placeholder?this.props.placeholder: 'Add Text Here'}
-                spellCheck={true}
-                onChange={this.onChange}
-                onFocus={this.toggleActive}
-                onBlur={this.toggleActive}
-            />
+                <EditorControls
+                    active={this.state.focused}
+                    editorState={editorState}
+                    onToggle={this.toggleInlineStyle}
+                    onToggleBlockType={this.toggleBlockType}
+                    AddLink={this.onAddLink}
+                />
+                <Editor
+                    editorState={editorState}
+                    decorators={decorators}
+                    placeholder={this.props.placeholder?this.props.placeholder: 'Add Text Here'}
+                    spellCheck={true}
+                    onChange={this.onChange}
+                    onFocus={this.toggleActive}
+                    onBlur={this.toggleActive}
+                />
             </div>
         )
     }
@@ -220,7 +213,6 @@ class RhEditor extends Component {
 export default RhEditor;
 
 const EditorControls = (props) => {
-    const {editorState} = props;
     var currentStyle = props.editorState.getCurrentInlineStyle();
     const selection = props.editorState.getSelection();
     const blockType = props.editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();

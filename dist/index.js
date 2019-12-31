@@ -1,25 +1,44 @@
 import React, { Component } from 'react';
-import { EditorState, RichUtils } from 'draft-js';
-import Editor from "draft-js-plugins-editor";
+import { EditorState, RichUtils, ContentBlock, genKey, CharacterMetadata, SelectionState, CompositeDecorator, Editor, convertFromRaw, convertToRaw } from 'draft-js';
+import { List, Repeat } from 'immutable';
 import { stateToHTML } from 'draft-js-export-html';
-import addLinkPlugin from './plugins/addLinkPlugin';
 import './editor.css';
 
+function findLinkEntities(contentBlock, callback, contentState) {
+  contentBlock.findEntityRanges(character => {
+    const entityKey = character.getEntity();
+    return entityKey !== null && contentState.getEntity(entityKey).getType() === 'LINK';
+  }, callback);
+}
+
+const Link = props => {
+  const {
+    url
+  } = props.contentState.getEntity(props.entityKey).getData();
+  return React.createElement("a", {
+    href: url,
+    title: url,
+    className: "link"
+  }, props.children);
+};
+
+const decorators = new CompositeDecorator([{
+  strategy: findLinkEntities,
+  component: Link
+}]);
+
 class RhEditor extends Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       editorState: EditorState.createEmpty(),
       editorText: '',
-      focused: false,
-      anchorInput: false
+      focused: false
     };
-    this.plugins = [addLinkPlugin];
     this.toggleInlineStyle = this.toggleInlineStyle.bind(this);
     this.toggleBlockType = this.toggleBlockType.bind(this);
     this.onChange = this.onChange.bind(this);
     this.toggleActive = this.toggleActive.bind(this);
-    this.onOpenLink = this.onOpenLink.bind(this);
     this.onAddLink = this.onAddLink.bind(this);
   }
 
@@ -40,14 +59,34 @@ class RhEditor extends Component {
   }
 
   onChange(editorState) {
+    const selectionState = editorState.getSelection();
+    const anchorKey = selectionState.getAnchorKey();
+    const currentContent = editorState.getCurrentContent();
+    const currentContentBlock = currentContent.getBlockForKey(anchorKey);
+    const start = selectionState.getStartOffset();
+    const end = selectionState.getEndOffset();
+    const selectedText = currentContentBlock.getText().slice(start, end);
+    let currentSelection;
+
+    if (selectedText.length > 0) {
+      currentSelection = selectionState;
+    } else {
+      currentSelection = null;
+    }
+
     const convertedText = stateToHTML(editorState.getCurrentContent());
     this.setState({
       editorState: editorState,
-      editorText: convertedText
+      editorText: convertedText,
+      currentSelection: currentSelection
     });
 
-    if (this.props.recieveContent) {
-      this.props.recieveContent(convertedText);
+    if (this.props.recieveHtml) {
+      this.props.recieveHtml(convertedText);
+    }
+
+    if (this.props.recieveEditorState) {
+      this.props.recieveEditorState(editorState);
     }
   }
 
@@ -63,44 +102,90 @@ class RhEditor extends Component {
     }
   }
 
-  onOpenLink() {
-    const {
-      anchorInput
-    } = this.state;
-    const editorState = this.state.editorState;
-    const selection = editorState.getSelection();
-    this.setState({
-      selection: selection,
-      anchorInput: !anchorInput
-    });
-  }
-
   onAddLink(link) {
     const {
-      selection
+      editorState,
+      currentSelection
     } = this.state;
 
-    if (link.length > 0) {
-      const editorState = this.state.editorState;
+    if (currentSelection) {
       const content = editorState.getCurrentContent();
-      const contentWithEntity = content.createEntity("LINK", "MUTABLE", {
+      const contentWithEntity = content.createEntity("LINK", "IMMUTABLE", {
         url: link
       });
-      const newEditorState = EditorState.push(editorState, contentWithEntity, "create-entity");
+      let newEditorState = EditorState.push(editorState, contentWithEntity, "create-entity");
       const entityKey = contentWithEntity.getLastCreatedEntityKey();
-      this.onChange(RichUtils.toggleLink(newEditorState, selection, entityKey));
+      newEditorState = RichUtils.toggleLink(newEditorState, newEditorState.getSelection(), entityKey);
+      const rawDraftContentState = JSON.stringify(convertToRaw(newEditorState.getCurrentContent()));
+      const blocksFromHTML = convertFromRaw(JSON.parse(rawDraftContentState));
+      let initial = EditorState.createWithContent(blocksFromHTML, decorators);
+      this.onChange(initial);
       this.setState({
-        anchorInput: false,
-        selection: null
+        currentSelection: null
       });
-      return "handled";
+    } else {
+      const selectionState = editorState.getSelection();
+      const contentState = editorState.getCurrentContent();
+      const currentBlock = contentState.getBlockForKey(selectionState.getStartKey());
+      const currentBlockKey = currentBlock.getKey();
+      const blockMap = contentState.getBlockMap();
+      const blocksBefore = blockMap.toSeq().takeUntil(v => v === currentBlock);
+      const blocksAfter = blockMap.toSeq().skipUntil(v => v === currentBlock).rest();
+      const newBlockKey = genKey();
+      const newBlock = new ContentBlock({
+        key: newBlockKey,
+        type: 'unstyled',
+        text: link,
+        characterList: new List(Repeat(CharacterMetadata.create(), link.length))
+      });
+      const newBlockMap = blocksBefore.concat([[currentBlockKey, currentBlock], [newBlockKey, newBlock]], blocksAfter).toOrderedMap();
+      const selection = editorState.getSelection();
+      const newContent = contentState.merge({
+        blockMap: newBlockMap,
+        selectionBefore: selection,
+        selectionAfter: selection.merge({
+          anchorKey: newBlockKey,
+          anchorOffset: 0,
+          focusKey: newBlockKey,
+          focusOffset: 0,
+          isBackward: false
+        })
+      });
+      let newEditorState = EditorState.push(editorState, newContent, 'split-block');
+      let newSelection = new SelectionState({
+        anchorKey: newBlockKey,
+        anchorOffset: 0,
+        focusKey: newBlockKey,
+        focusOffset: link.length
+      });
+      newEditorState = EditorState.forceSelection(newEditorState, newSelection);
+      const newContentState = newEditorState.getCurrentContent();
+      const contentStateWithEntity = newContentState.createEntity('LINK', 'IMMUTABLE', {
+        url: link
+      });
+      const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+      newEditorState = EditorState.set(newEditorState, {
+        currentContent: contentStateWithEntity
+      });
+      newEditorState = RichUtils.toggleLink(newEditorState, newEditorState.getSelection(), entityKey); // reset selection
+
+      newSelection = new SelectionState({
+        anchorKey: newBlockKey,
+        anchorOffset: link.length,
+        focusKey: newBlockKey,
+        focusOffset: link.length
+      });
+      newEditorState = EditorState.forceSelection(newEditorState, newSelection);
+      const rawDraftContentState = JSON.stringify(convertToRaw(newEditorState.getCurrentContent()));
+      const blocksFromHTML = convertFromRaw(JSON.parse(rawDraftContentState));
+      let initial = EditorState.createWithContent(blocksFromHTML, decorators);
+      this.onChange(initial);
     }
   }
 
   render() {
     const {
-      editorState,
-      anchorInput
+      editorState
     } = this.state;
     return React.createElement("div", {
       className: "wrapper"
@@ -109,11 +194,10 @@ class RhEditor extends Component {
       editorState: editorState,
       onToggle: this.toggleInlineStyle,
       onToggleBlockType: this.toggleBlockType,
-      AddLink: this.onOpenLink
-    }), anchorInput ? React.createElement(LinkEditor, {
-      addAnchor: this.onAddLink
-    }) : '', React.createElement(Editor, {
+      AddLink: this.onAddLink
+    }), React.createElement(Editor, {
       editorState: editorState,
+      decorators: decorators,
       placeholder: this.props.placeholder ? this.props.placeholder : 'Add Text Here',
       spellCheck: true,
       onChange: this.onChange,
@@ -125,6 +209,71 @@ class RhEditor extends Component {
 }
 
 export default RhEditor;
+
+const EditorControls = props => {
+  var currentStyle = props.editorState.getCurrentInlineStyle();
+  const selection = props.editorState.getSelection();
+  const blockType = props.editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
+  return React.createElement("div", {
+    className: `editorControls ${props.active ? 'open' : ''}`
+  }, MEDIA_BUTTONS.map(type => React.createElement(LinkButton, {
+    key: type.label,
+    label: type.label,
+    addLink: props.AddLink
+  })), INLINE_STYLES.map(type => React.createElement(EditorButton, {
+    key: type.label,
+    active: currentStyle.has(type.style),
+    label: type.label,
+    onToggle: props.onToggle,
+    style: type.style
+  })), BLOCK_TYPES.map(type => React.createElement(EditorButton, {
+    key: type.label,
+    active: type.style === blockType,
+    label: type.label,
+    onToggle: props.onToggleBlockType,
+    style: type.style
+  })));
+};
+
+const INLINE_STYLES = [{
+  label: 'B',
+  style: 'BOLD'
+}, {
+  label: 'I',
+  style: 'ITALIC'
+}, {
+  label: 'U',
+  style: 'UNDERLINE'
+}];
+const BLOCK_TYPES = [{
+  label: 'H1',
+  style: 'header-one'
+}, {
+  label: 'H2',
+  style: 'header-two'
+}, {
+  label: 'H3',
+  style: 'header-three'
+}, {
+  label: 'H4',
+  style: 'header-four'
+}, {
+  label: 'H5',
+  style: 'header-five'
+}, {
+  label: 'H6',
+  style: 'header-six'
+}, {
+  label: 'UL',
+  style: 'unordered-list-item'
+}, {
+  label: 'OL',
+  style: 'ordered-list-item'
+}];
+const MEDIA_BUTTONS = [{
+  label: 'Link',
+  style: 'ANCHOR'
+}];
 
 class EditorButton extends Component {
   constructor() {
@@ -152,118 +301,103 @@ class EditorButton extends Component {
 
 }
 
-const INLINE_STYLES = [{
-  label: 'Bold',
-  style: 'BOLD'
-}, {
-  label: 'Italic',
-  style: 'ITALIC'
-}, {
-  label: 'Underline',
-  style: 'UNDERLINE'
-}];
-const MEDIA_BUTTONS = [{
-  label: 'Anchor',
-  style: 'ANCHOR'
-}];
-
-const EditorControls = props => {
-  const {
-    editorState
-  } = props;
-  var currentStyle = props.editorState.getCurrentInlineStyle();
-  const selection = props.editorState.getSelection();
-  const blockType = props.editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
-  return React.createElement("div", {
-    className: `editorControls ${props.active ? 'open' : ''}`
-  }, INLINE_STYLES.map(type => React.createElement(EditorButton, {
-    key: type.label,
-    active: currentStyle.has(type.style),
-    label: type.label,
-    onToggle: props.onToggle,
-    style: type.style
-  })), React.createElement("br", null), BLOCK_TYPES.map(type => React.createElement(EditorButton, {
-    key: type.label,
-    active: type.style === blockType,
-    label: type.label,
-    onToggle: props.onToggleBlockType,
-    style: type.style
-  })), MEDIA_BUTTONS.map(type => React.createElement(EditorButton, {
-    key: type.label,
-    label: type.label,
-    onToggle: props.AddLink
-  })));
-};
-
-const BLOCK_TYPES = [{
-  label: 'H1',
-  style: 'header-one'
-}, {
-  label: 'H2',
-  style: 'header-two'
-}, {
-  label: 'H3',
-  style: 'header-three'
-}, {
-  label: 'H4',
-  style: 'header-four'
-}, {
-  label: 'H5',
-  style: 'header-five'
-}, {
-  label: 'H6',
-  style: 'header-six'
-}, {
-  label: 'UL',
-  style: 'unordered-list-item'
-}, {
-  label: 'OL',
-  style: 'ordered-list-item'
-}];
-
-class LinkEditor extends React.Component {
-  constructor(props) {
-    super(props);
+class LinkButton extends Component {
+  constructor() {
+    super();
     this.state = {
+      addingLink: false,
       anchor: ''
     };
-    this.onSubmit = this.onSubmit.bind(this);
-    this.onChange = this.onChange.bind(this);
+    this.onToggle = this.onToggle.bind(this);
   }
 
-  onSubmit(e) {
+  onToggle(e) {
     e.preventDefault();
-
-    if (this.props.addAnchor) {
-      this.props.addAnchor(this.state.anchor);
-    }
-
     this.setState({
+      addingLink: !this.state.addingLink,
       anchor: ''
     });
   }
 
-  onChange(e) {
+  setWrapperRef(node) {
+    this.wrapperRef = node;
+  }
+
+  changeAnchor(e) {
     this.setState({
       anchor: e.target.value
     });
   }
 
-  render() {
-    return React.createElement("form", {
-      className: "anchorContainer",
-      onSubmit: this.onSubmit
-    }, React.createElement("input", {
-      className: "anchorInput",
-      type: "text",
-      placeholder: "please enter url",
-      onChange: this.onChange,
-      value: this.state.anchor
-    }), React.createElement("div", {
-      className: "anchorButtonAppend"
-    }, React.createElement("button", {
-      type: "submit"
-    }, "Add Link")));
+  addLink(e) {
+    e.preventDefault();
+    const {
+      anchor
+    } = this.state;
+    this.setState({
+      anchor: '',
+      addingLink: false
+    });
+    this.props.addLink(anchor);
   }
 
+  render() {
+    const {
+      addingLink,
+      anchor
+    } = this.state;
+    let className = 'editorButton';
+
+    if (this.state.addingLink) {
+      className += ' editorButtonActive';
+    }
+
+    return React.createElement("span", {
+      className: `rhLinkContainer ${className}`
+    }, React.createElement("span", {
+      onClick: this.onToggle
+    }, this.props.label), addingLink && React.createElement("div", {
+      className: "tooltip"
+    }, React.createElement("div", {
+      className: "tooltipGroup"
+    }, React.createElement("input", {
+      placeholder: "Enter URL..",
+      value: anchor,
+      autoFocus: true,
+      onChange: this.changeAnchor
+    }), React.createElement("button", {
+      onClick: this.addLink
+    }, "Insert"))));
+  }
+
+}
+
+function getEntities(editorState, entityType = null) {
+  const content = editorState.getCurrentContent();
+  const entities = [];
+  content.getBlocksAsArray().forEach(block => {
+    let selectedEntity = null;
+    block.findEntityRanges(character => {
+      if (character.getEntity() !== null) {
+        const entity = content.getEntity(character.getEntity());
+
+        if (!entityType || entityType && entity.getType() === entityType) {
+          selectedEntity = {
+            entityKey: character.getEntity(),
+            blockKey: block.getKey(),
+            entity: content.getEntity(character.getEntity())
+          };
+          return true;
+        }
+      }
+
+      return false;
+    }, (start, end) => {
+      entities.push({ ...selectedEntity,
+        start,
+        end
+      });
+    });
+  });
+  return entities;
 }

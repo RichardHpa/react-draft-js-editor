@@ -1,121 +1,197 @@
 @import url("https://fonts.googleapis.com/css?family=Nunito");
+*{
+    box-sizing: border-box;
+}
 :root {
-  --dark: #3E464D;
+    --dark: #3E464D;
+}
+
+a{
+    /* color: #2980b9 !important; */
 }
 
 .wrapper {
-  font-family: "Nunito", sans-serif;
-  width: 100%;
-  min-height: 10px;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
+    font-family: "Nunito", sans-serif;
+    width: 100%;
+    min-height: 10px;
+    height: 100%;
+    position: relative;
+    /* overflow: hidden; */
 }
+
 .wrapper .editorControls {
-  font-size: 16px;
-  text-align: left;
-  box-sizing: border-box;
-  position: absolute;
-  top: 0;
-  transform: translateY(-100%);
-  left: 0;
-  width: 100%;
-  background-color: var(--dark);
-  color: white;
-  border: 1px solid var(--dark);
-  padding: 5px;
-  transition: transform 0.5s;
+    font-size: 16px;
+    text-align: left;
+    box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    transform: translateY(-100%);
+    left: 0;
+    width: 100%;
+    background-color: var(--dark);
+    color: white;
+    border: 1px solid var(--dark);
+    padding: 5px;
+    transition: transform 0.5s;
+    z-index: 2;
 }
 .wrapper .editorControls.open {
-  top: 0;
-  transform: translateY(0);
+    top: 0;
+    transform: translateY(0);
 }
 .wrapper .editorControls .editorButton {
-  color: white;
-  cursor: pointer;
-  padding: 0px 16px;
-  display: inline-block;
-  border-right: 0.8px solid white;
+    color: white;
+    cursor: pointer;
+    padding: 0px 16px;
+    display: inline-block;
+    border-right: 0.8px solid white;
 }
 .wrapper .editorControls .editorButton:hover {
-  cursor: pointer;
-  text-decoration: underline;
+    cursor: pointer;
+    text-decoration: underline;
 }
 .wrapper .editorControls .editorButton.editorButtonActive {
-  color: #5890ff;
+    color: #5890ff;
 }
 
 .DraftEditor-root {
-  color: #3E464D !important;
-  text-align: left !important;
-  background: #fff;
-  border: 1px solid #bdc3c7;
-  font-family: "Nunito", sans-serif;
-  font-size: 14px;
-  padding: 70px 15px;
-  height: 100%;
-  margin-top: 10px;
+    /* color: var(--dark) !important; */
+    text-align: left !important;
+    background: #fff;
+    border: 1px solid #bdc3c7;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    padding: 70px 15px;
+    height: 100%;
+    margin-top: 10px;
 }
 @media screen and (min-width: 768px) {
-  .DraftEditor-root {
-    margin-top: 0px;
-  }
+    .DraftEditor-root {
+        margin-top: 0px;
+    }
 }
 
 .DraftEditor-editorContainer {
-  background-color: rgba(255, 255, 255, 0);
-  border-left: 0.1px solid transparent;
-  position: relative;
-  z-index: 1;
-  width: 100%;
+    background-color: rgba(255, 255, 255, 0);
+    border-left: 0.1px solid transparent;
+    position: relative;
+    z-index: 1;
+    width: 100%;
 }
 
 .public-DraftEditorPlaceholder-inner {
-  color: #9197a3;
-  position: absolute;
-  z-index: 1;
+    color: #9197a3;
+    position: absolute;
+    z-index: 1;
 }
 
-
-
-
-
-/* .anchorContainer {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  width: 100%;
-  background-color: white;
-  padding: 10px 20px;
-  box-sizing: border-box;
+.rhLinkContainer {
+    position: relative;
 }
-.anchorContainer .anchorInput {
-  display: block;
-  position: relative;
-  flex: 1 1 auto;
-  width: 1%;
-  margin-bottom: 0;
-  padding: 0.375rem 0.75rem;
-  border: 1px solid #ced4da;
-  box-sizing: border-box;
+
+.rhLinkContainer .tooltip {
+    border: 1px solid var(--dark);
+    background-color: white;
+    top: 100%;
+    color: var(--dark);
+    display: block;
+    /* left: -200%; */
+    margin-top: 15px;
+    opacity: 0;
+    padding: 5px;
+    pointer-events: none;
+    position: absolute;
+    width: 500%;
+    -webkit-transform: translateY(10px);
+    -moz-transform: translateY(10px);
+    -ms-transform: translateY(10px);
+    -o-transform: translateY(10px);
+    transform: translateY(10px);
+    -webkit-transition: all .25s ease-out;
+    -moz-transition: all .25s ease-out;
+    -ms-transition: all .25s ease-out;
+    -o-transition: all .25s ease-out;
+    transition: all .25s ease-out;
+    -webkit-box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.28);
+    -moz-box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.28);
+    -ms-box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.28);
+    -o-box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.28);
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.28);
 }
-.anchorContainer .anchorButtonAppend {
-  display: flex;
-  margin-left: -1px;
-  box-sizing: border-box;
+
+/* This bridges the gap so you can mouse into the tooltip without it disappearing */
+.rhLinkContainer .tooltip:before {
+    top: -20px;
+    content: " ";
+    display: block;
+    height: 20px;
+    left: 0;
+    position: absolute;
+    width: 100%;
 }
-.anchorContainer .anchorButtonAppend button {
-  padding: 0.375rem 0.75rem;
-  background-color: transparent;
-  border: 1px solid #ced4da;
-  color: #6c757d;
-  border-radius: 0;
-  z-index: 2;
-  box-sizing: border-box;
+
+/* CSS Triangles - see Trevor's post */
+.rhLinkContainer .tooltip:after {
+    border-left: solid transparent 10px;
+    border-right: solid transparent 10px;
+    border-bottom: solid var(--dark) 10px;
+    top: -10px;
+    content: " ";
+    height: 0;
+    /* left: 50%; */
+    /* margin-left: -13px; */
+    position: absolute;
+    width: 0;
 }
-.anchorContainer .anchorButtonAppend button:hover {
-  cursor: pointer;
-  background-color: #ced4da;
-  box-sizing: border-box;
-} */
+
+.rhLinkContainer .tooltip {
+    opacity: 1;
+    pointer-events: auto;
+    -webkit-transform: translateY(0px);
+    -moz-transform: translateY(0px);
+    -ms-transform: translateY(0px);
+    -o-transform: translateY(0px);
+    transform: translateY(0px);
+}
+
+.rhLinkContainer .tooltip input{
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    border-color: transparent;
+}
+
+.tooltipGroup{
+    display: flex;
+    align-items: center;
+}
+
+.tooltipGroup button{
+    text-transform: uppercase;
+    background-color: var(--dark);
+    color: white;
+    height: 100%;
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    padding: .375rem .75rem;
+    border-radius: 0;
+}
+/* IE can just show/hide with no transition */
+.lte8 .rhLinkContainer .tooltip {
+    display: none;
+}
+.lte8 .rhLinkContainer .tooltip {
+    display: block;
+}
+
+.public-DraftStyleDefault-block {
+  margin-bottom: 1em;
+}

@@ -108,19 +108,6 @@ class RhEditor extends Component {
         }
     }
 
-
-    //Need to remove those
-    // onOpenLink(){
-    //     const { anchorInput } = this.state;
-    //     const editorState = this.state.editorState;
-    //     const selection = editorState.getSelection();
-    //
-    //     this.setState({
-    //         selection: selection,
-    //         anchorInput: !anchorInput
-    //     })
-    // }
-
     onAddLink(link){
         const { editorState, currentSelection } = this.state;
 
@@ -142,8 +129,9 @@ class RhEditor extends Component {
             let initial = EditorState.createWithContent(blocksFromHTML, decorators);
 
             this.onChange(initial);
-
-            // this.onChange(RichUtils.toggleLink(newEditorState, currentSelection, entityKey));
+            this.setState({
+                currentSelection: null
+            })
         } else {
             const selectionState = editorState.getSelection();
             const contentState = editorState.getCurrentContent();
@@ -377,17 +365,17 @@ class LinkButton extends Component {
         })
     }
 
-    setWrapperRef = (node) => {
+    setWrapperRef(node){
       this.wrapperRef = node;
     }
 
-    changeAnchor = (e) => {
+    changeAnchor(e){
         this.setState({
             anchor: e.target.value
         })
     }
 
-    addLink = (e) => {
+    addLink(e){
         e.preventDefault();
         const { anchor } = this.state;
         this.setState({
@@ -418,4 +406,33 @@ class LinkButton extends Component {
             </span>
         );
     }
+}
+
+
+
+function getEntities(editorState, entityType = null) {
+  const content = editorState.getCurrentContent();
+  const entities = [];
+  content.getBlocksAsArray().forEach((block) => {
+    let selectedEntity = null;
+    block.findEntityRanges(
+      (character) => {
+        if (character.getEntity() !== null) {
+          const entity = content.getEntity(character.getEntity());
+          if (!entityType || (entityType && entity.getType() === entityType)) {
+            selectedEntity = {
+              entityKey: character.getEntity(),
+              blockKey: block.getKey(),
+              entity: content.getEntity(character.getEntity()),
+            };
+            return true;
+          }
+        }
+        return false;
+      },
+      (start, end) => {
+        entities.push({ ...selectedEntity, start, end });
+      });
+  });
+  return entities;
 }

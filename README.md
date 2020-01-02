@@ -26,8 +26,14 @@ Via package Manager
         console.log(value);
     }
 
+    const handleRecieveEditorState = (state) = {
+        console.log(state);
+    }
+
     <RhEditor
         showControls
-        recieveContent={handleRecieveContent}
+        startingBlocks={json formated blocks}
+        recieveHtml={handleRecieveHtml}
+        recieveEditorState={handleRecieveEditorState}
     />
 ```

@@ -48,6 +48,14 @@ class RhEditor extends Component {
         focused: true
       });
     }
+
+    if (this.props.startingBlocks) {
+      const blocksFromHTML = convertFromRaw(JSON.parse(this.props.startingBlocks));
+      let initial = EditorState.createWithContent(blocksFromHTML, decorators);
+      this.setState({
+        editorState: initial
+      });
+    }
   }
 
   toggleInlineStyle(inlineStyle) {
@@ -86,7 +94,8 @@ class RhEditor extends Component {
     }
 
     if (this.props.recieveEditorState) {
-      this.props.recieveEditorState(editorState);
+      const rawDraftContentState = JSON.stringify(convertToRaw(editorState.getCurrentContent()));
+      this.props.recieveEditorState(rawDraftContentState);
     }
   }
 
@@ -309,6 +318,8 @@ class LinkButton extends Component {
       anchor: ''
     };
     this.onToggle = this.onToggle.bind(this);
+    this.changeAnchor = this.changeAnchor.bind(this);
+    this.addLink = this.addLink.bind(this);
   }
 
   onToggle(e) {
@@ -370,34 +381,4 @@ class LinkButton extends Component {
     }, "Insert"))));
   }
 
-}
-
-function getEntities(editorState, entityType = null) {
-  const content = editorState.getCurrentContent();
-  const entities = [];
-  content.getBlocksAsArray().forEach(block => {
-    let selectedEntity = null;
-    block.findEntityRanges(character => {
-      if (character.getEntity() !== null) {
-        const entity = content.getEntity(character.getEntity());
-
-        if (!entityType || entityType && entity.getType() === entityType) {
-          selectedEntity = {
-            entityKey: character.getEntity(),
-            blockKey: block.getKey(),
-            entity: content.getEntity(character.getEntity())
-          };
-          return true;
-        }
-      }
-
-      return false;
-    }, (start, end) => {
-      entities.push({ ...selectedEntity,
-        start,
-        end
-      });
-    });
-  });
-  return entities;
 }

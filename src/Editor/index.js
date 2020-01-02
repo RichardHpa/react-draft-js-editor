@@ -59,6 +59,13 @@ class RhEditor extends Component {
                 focused: true
             })
         }
+        if(this.props.startingBlocks){
+            const blocksFromHTML = convertFromRaw(JSON.parse( this.props.startingBlocks));
+            let initial = EditorState.createWithContent(blocksFromHTML, decorators);
+            this.setState({
+                editorState: initial
+            })
+        }
     }
 
     toggleInlineStyle(inlineStyle){
@@ -95,7 +102,8 @@ class RhEditor extends Component {
             this.props.recieveHtml(convertedText);
         }
         if(this.props.recieveEditorState){
-            this.props.recieveEditorState(editorState);
+            const rawDraftContentState = JSON.stringify( convertToRaw(editorState.getCurrentContent()) );
+            this.props.recieveEditorState(rawDraftContentState);
         }
     }
 

@@ -1,4 +1,6 @@
 ## React JS Custom Editor
+ [![Build Status](https://travis-ci.org/RichardHpa/react-draft-js-editor.svg?branch=master)](https://travis-ci.org/RichardHpa/react-draft-js-editor)
+
 
 Custom React JS wysiwyg editor.  
 
